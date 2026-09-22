@@ -14,7 +14,9 @@ void main() {
 }
 
 class HomeTourApp extends StatelessWidget {
-  const HomeTourApp({super.key});
+  const HomeTourApp({super.key, this.autoBootstrap = true});
+
+  final bool autoBootstrap;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
@@ -26,13 +28,15 @@ class HomeTourApp extends StatelessWidget {
             useMaterial3: true,
             colorSchemeSeed: const Color(0xFF15803D),
           ),
-          home: const AppShell(),
+          home: AppShell(autoBootstrap: autoBootstrap),
         ),
       );
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({super.key, this.autoBootstrap = true});
+
+  final bool autoBootstrap;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -51,9 +55,11 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => context.read<AppState>().bootstrap(),
-    );
+    if (widget.autoBootstrap) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => context.read<AppState>().bootstrap(),
+      );
+    }
   }
 
   @override
