@@ -1,15 +1,38 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Booking {
-  final String id, status, tourName, travelDate;
+  final String id;
+  final String status;
+  final String tourName;
+  final String travelDate;
   final double total;
-  const Booking({required this.id, required this.status, required this.tourName, required this.travelDate, required this.total});
+
+  const Booking({
+    required this.id,
+    required this.status,
+    required this.tourName,
+    required this.travelDate,
+    required this.total,
+  });
+
   factory Booking.fromJson(Map<String, dynamic> j) {
-    final tour = j['tour'] is Map ? j['tour'] as Map : {};
     return Booking(
-      id: (j['_id'] ?? j['id'] ?? '').toString(),
+      id: (j['id'] ?? j['_id'] ?? '').toString(),
       status: (j['status'] ?? 'pending').toString(),
-      tourName: (tour['title'] ?? tour['name'] ?? j['tourName'] ?? 'Tour booking').toString(),
-      travelDate: (j['travelDate'] ?? j['date'] ?? '').toString(),
-      total: double.tryParse((j['totalAmount'] ?? j['total'] ?? j['amount'] ?? 0).toString()) ?? 0,
+      tourName: (j['tourName'] ?? j['tourTitle'] ?? 'Tour booking').toString(),
+      travelDate: _dateValue(j['travelDate'] ?? j['date']),
+      total: _doubleValue(j['totalAmount'] ?? j['total'] ?? j['amount']),
     );
+  }
+
+  static String _dateValue(dynamic value) {
+    if (value is Timestamp) return value.toDate().toIso8601String();
+    if (value is DateTime) return value.toIso8601String();
+    return value?.toString() ?? '';
+  }
+
+  static double _doubleValue(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
   }
 }
