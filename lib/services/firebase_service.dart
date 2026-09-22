@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class FirebaseService {
   FirebaseService({
@@ -42,16 +41,18 @@ class FirebaseService {
     }
 
     final data = Map<String, dynamic>.from(snapshot.data()!);
+    final tenantId = (data['tenantId'] ?? '').toString().trim();
+    if (tenantId.isEmpty) {
+      await auth.signOut();
+      throw StateError(
+        'Your Global Tours user profile is not linked to a tenant.',
+      );
+    }
+
     data['id'] = user.uid;
     data['email'] = data['email'] ?? user.email ?? '';
     data['name'] = data['name'] ?? user.displayName ?? '';
-
-    if ((data['tenantId'] ?? '').toString().isEmpty) {
-      final configuredTenant = dotenv.maybeGet('DEFAULT_TENANT_ID')?.trim();
-      if (configuredTenant != null && configuredTenant.isNotEmpty) {
-        data['tenantId'] = configuredTenant;
-      }
-    }
+    data['tenantId'] = tenantId;
     return data;
   }
 
@@ -123,7 +124,18 @@ class FirebaseService {
       throw StateError('User, tenant and tour are required to create a booking.');
     }
     if (travellers < 1) {
-      throw ArgumentError.value(travellers, 'travellers', 'Must be at least 1.');
+      throw ArgumentError.value(
+        travellers,
+        'travellers',
+        'Must be at least 1.',
+      );
+    }
+    if (unitPrice < 0) {
+      throw ArgumentError.value(
+        unitPrice,
+        'unitPrice',
+        'Cannot be negative.',
+      );
     }
 
     await firestore.collection('bookings').add({
