@@ -4,7 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
-import 'services/firebase_service.dart';
+import 'services/firebase_service.dart' as app_firebase;
 import 'state/app_state.dart';
 import 'screens/bookings_screen.dart';
 import 'screens/home_screen.dart';
@@ -71,11 +71,11 @@ class FirebaseConfigurationErrorApp extends StatelessWidget {
 class HomeTourApp extends StatelessWidget {
   const HomeTourApp({super.key, this.autoBootstrap = true, this.firebaseService});
   final bool autoBootstrap;
-  final FirebaseService? firebaseService;
+  final app_firebase.FirebaseService? firebaseService;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
-        create: (_) => AppState(firebaseService ?? FirebaseService()),
+        create: (_) => AppState(firebaseService ?? app_firebase.FirebaseService()),
         child: MaterialApp(
           title: 'Global Tours',
           debugShowCheckedModeBanner: false,
