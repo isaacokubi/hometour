@@ -19,16 +19,33 @@ class _TourDetailsScreenState extends State<TourDetailsScreen> {
   bool busy = false;
 
   Future<void> _selectDate() async {
-    final selected = await showDatePicker(context: context, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 730)), initialDate: date);
+    final selected = await showDatePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 730)),
+      initialDate: date,
+    );
     if (selected != null) setState(() => date = selected);
   }
 
   Future<void> _book() async {
     setState(() => busy = true);
-    final success = await context.read<AppState>().createBooking(widget.tour.id, date, travellers);
+    final success = await context.read<AppState>().createBooking(
+          widget.tour.id,
+          date,
+          travellers,
+          widget.tour.price,
+          widget.tour.title,
+        );
     if (!mounted) return;
     setState(() => busy = false);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(success ? 'Booking created successfully.' : 'Booking failed.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success ? 'Booking created successfully.' : 'Booking failed.',
+        ),
+      ),
+    );
     if (success) Navigator.pop(context);
   }
 
@@ -42,31 +59,71 @@ class _TourDetailsScreenState extends State<TourDetailsScreen> {
         children: [
           Container(
             height: 190,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), color: Theme.of(context).colorScheme.primaryContainer),
-            child: const Center(child: Icon(Icons.photo_camera_back, size: 70)),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              color: Theme.of(context).colorScheme.primaryContainer,
+            ),
+            child: const Center(
+              child: Icon(Icons.photo_camera_back, size: 70),
+            ),
           ),
           const SizedBox(height: 20),
-          Text(tour.title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            tour.title,
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
           Text(tour.location),
           const SizedBox(height: 12),
-          Text(tour.description.isEmpty ? 'Experience an unforgettable Kenyan journey with Global Tours.' : tour.description),
+          Text(
+            tour.description.isEmpty
+                ? 'Experience an unforgettable Kenyan journey with Global Tours.'
+                : tour.description,
+          ),
           const SizedBox(height: 20),
-          Text('KES ${tour.price.toStringAsFixed(0)} per traveller', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'KES ${tour.price.toStringAsFixed(0)} per traveller',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 20),
-          ListTile(contentPadding: EdgeInsets.zero, title: const Text('Travel date'), subtitle: Text(DateFormat.yMMMd().format(date)), trailing: const Icon(Icons.calendar_month), onTap: _selectDate),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Travel date'),
+            subtitle: Text(DateFormat.yMMMd().format(date)),
+            trailing: const Icon(Icons.calendar_month),
+            onTap: _selectDate,
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Travellers'),
-              Row(children: [
-                IconButton(onPressed: travellers > 1 ? () => setState(() => travellers--) : null, icon: const Icon(Icons.remove_circle_outline)),
-                Text('$travellers'),
-                IconButton(onPressed: () => setState(() => travellers++), icon: const Icon(Icons.add_circle_outline)),
-              ]),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: travellers > 1
+                        ? () => setState(() => travellers--)
+                        : null,
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text('$travellers'),
+                  IconButton(
+                    onPressed: () => setState(() => travellers++),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
-          FilledButton(onPressed: busy ? null : _book, child: Text(busy ? 'Creating booking...' : 'Book now')),
+          FilledButton(
+            onPressed: busy ? null : _book,
+            child: Text(busy ? 'Creating booking...' : 'Book now'),
+          ),
         ],
       ),
     );
