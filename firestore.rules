@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function sameTenant(tenantId) {
+      return signedIn()
+        && tenantId is string
+        && tenantId != ''
+        && userDoc().tenantId == tenantId;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    match /tours/{tourId} {
+      allow read: if signedIn() && sameTenant(resource.data.tenantId);
+      allow write: if false;
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && sameTenant(resource.data.tenantId);
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && sameTenant(request.resource.data.tenantId)
+        && request.resource.data.tourId is string
+        && request.resource.data.numberOfGuests is int
+        && request.resource.data.numberOfGuests > 0
+        && request.resource.data.totalAmount is number
+        && request.resource.data.status == 'pending';
+
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && sameTenant(resource.data.tenantId)
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.tenantId == resource.data.tenantId;
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
