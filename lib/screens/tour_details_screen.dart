@@ -41,9 +41,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen> {
     setState(() => busy = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          success ? 'Booking created successfully.' : 'Booking failed.',
-        ),
+        content: Text(success ? 'Booking created successfully.' : 'Booking failed.'),
       ),
     );
     if (success) Navigator.pop(context);
@@ -63,17 +61,14 @@ class _TourDetailsScreenState extends State<TourDetailsScreen> {
               borderRadius: BorderRadius.circular(22),
               color: Theme.of(context).colorScheme.primaryContainer,
             ),
-            child: const Center(
-              child: Icon(Icons.photo_camera_back, size: 70),
-            ),
+            child: const Center(child: Icon(Icons.photo_camera_back, size: 70)),
           ),
           const SizedBox(height: 20),
           Text(
             tour.title,
-            style: Theme.of(context)
-                .textTheme
-                .headlineSmall
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           Text(tour.location),
           const SizedBox(height: 12),
@@ -84,11 +79,10 @@ class _TourDetailsScreenState extends State<TourDetailsScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'KES ${tour.price.toStringAsFixed(0)} per traveller',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
+            'KES ' + tour.price.toStringAsFixed(0) + ' per traveller',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 20),
           ListTile(
@@ -110,7 +104,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen> {
                         : null,
                     icon: const Icon(Icons.remove_circle_outline),
                   ),
-                  Text('$travellers'),
+                  Text(travellers.toString()),
                   IconButton(
                     onPressed: () => setState(() => travellers++),
                     icon: const Icon(Icons.add_circle_outline),
