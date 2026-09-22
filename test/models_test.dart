@@ -1,12 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:hometour/models/booking.dart';
 import 'package:hometour/models/tour.dart';
 
 void main() {
-  test('Tour maps Global Tours API payload', () {
+  test('Tour maps a Firestore-style tour document', () {
     final tour = Tour.fromJson({
-      '_id': 'tour-1',
+      'id': 'tour-1',
       'title': 'Maasai Mara Safari',
       'description': 'Three days in the Mara',
       'location': 'Maasai Mara',
@@ -14,7 +15,6 @@ void main() {
       'durationDays': 3,
       'featured': true,
     });
-
     expect(tour.id, 'tour-1');
     expect(tour.title, 'Maasai Mara Safari');
     expect(tour.price, 45000);
@@ -22,15 +22,14 @@ void main() {
     expect(tour.featured, isTrue);
   });
 
-  test('Booking maps populated tour and booking totals', () {
+  test('Booking maps Firestore timestamps and totals', () {
     final booking = Booking.fromJson({
-      '_id': 'booking-1',
+      'id': 'booking-1',
       'status': 'pending',
-      'travelDate': '2026-10-18T00:00:00.000Z',
+      'travelDate': Timestamp.fromDate(DateTime(2026, 10, 18)),
       'totalAmount': 90000,
-      'tour': {'_id': 'tour-1', 'title': 'Maasai Mara Safari'},
+      'tourName': 'Maasai Mara Safari',
     });
-
     expect(booking.id, 'booking-1');
     expect(booking.tourName, 'Maasai Mara Safari');
     expect(booking.total, 90000);
