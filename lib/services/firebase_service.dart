@@ -6,11 +6,14 @@ class FirebaseService {
   FirebaseService({
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
-  })  : auth = auth ?? FirebaseAuth.instance,
-        firestore = firestore ?? FirebaseFirestore.instance;
+  })  : _auth = auth,
+        _firestore = firestore;
 
-  final FirebaseAuth auth;
-  final FirebaseFirestore firestore;
+  final FirebaseAuth? _auth;
+  final FirebaseFirestore? _firestore;
+
+  FirebaseAuth get auth => _auth ?? FirebaseAuth.instance;
+  FirebaseFirestore get firestore => _firestore ?? FirebaseFirestore.instance;
 
   String? get currentUid => auth.currentUser?.uid;
 
@@ -42,6 +45,7 @@ class FirebaseService {
     data['id'] = user.uid;
     data['email'] = data['email'] ?? user.email ?? '';
     data['name'] = data['name'] ?? user.displayName ?? '';
+
     if ((data['tenantId'] ?? '').toString().isEmpty) {
       final configuredTenant = dotenv.maybeGet('DEFAULT_TENANT_ID')?.trim();
       if (configuredTenant != null && configuredTenant.isNotEmpty) {
@@ -58,8 +62,6 @@ class FirebaseService {
     }
     return _loadUserProfile(user);
   }
-
-  Stream<User?> authStateChanges() => auth.authStateChanges();
 
   Future<void> signOut() => auth.signOut();
 
@@ -81,10 +83,11 @@ class FirebaseService {
     }).toList();
   }
 
-  Future<List<Map<String, dynamic>>> getBookings(String uid, String tenantId) async {
-    if (uid.isEmpty || tenantId.isEmpty) {
-      return [];
-    }
+  Future<List<Map<String, dynamic>>> getBookings(
+    String uid,
+    String tenantId,
+  ) async {
+    if (uid.isEmpty || tenantId.isEmpty) return [];
 
     final snapshot = await firestore
         .collection('bookings')
@@ -141,8 +144,15 @@ class FirebaseService {
   }
 
   double _timestampValue(dynamic value) {
-    if (value is Timestamp) return value.millisecondsSinceEpoch.toDouble();
-    if (value is DateTime) return value.millisecondsSinceEpoch.toDouble();
-    return DateTime.tryParse(value?.toString() ?? '')?.millisecondsSinceEpoch.toDouble() ?? 0;
+    if (value is Timestamp) {
+      return value.millisecondsSinceEpoch.toDouble();
+    }
+    if (value is DateTime) {
+      return value.millisecondsSinceEpoch.toDouble();
+    }
+    return DateTime.tryParse(value?.toString() ?? '')
+            ?.millisecondsSinceEpoch
+            .toDouble() ??
+        0;
   }
 }
