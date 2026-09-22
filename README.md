@@ -1,53 +1,52 @@
 # HomeTour — Global Tours Flutter App
 
-Flutter/Dart mobile client for the Global Tours multi-tenant tours and travel platform.
+Flutter/Dart mobile client for **Global Tours**, backed directly by **Firebase Authentication and Cloud Firestore**.
 
-## Source repository audited
+## Database migration
 
-https://github.com/isaacokubi/hussein-mboya-tours
+The mobile application no longer uses MongoDB, Mongoose, the MERN API, Axios/Dio, or API login/session endpoints.
 
-The source repository is a production-oriented MERN SaaS covering tenant isolation, authentication, tours, destinations, bookings, payments, finance, hospitality, operations, RBAC and Kenyan compliance/eTIMS architecture.
+The application now uses Firebase Authentication for email/password sign-in, Cloud Firestore for users, tenants, tours and bookings, and Firebase Security Rules for tenant isolation and customer booking access.
 
-## Source audit findings
+No Firebase service-account credentials belong in this Flutter application.
 
-The source README records the 2026-09-21 code verification baseline as passing: server static checks, 95 backend tests with 92 passed and 3 intentionally skipped, security tests, tour-domain tests, client lint/build and the production-readiness contract. It also explicitly states that live production/provider certification remained unverified.
+## Firestore collections
 
-The source API contract uses tenant-aware headers. The Flutter client follows that model by persisting the authenticated tenant ID and sending X-Tenant-ID, or using X-Tenant-Slug for public tenant resolution.
+Expected documents:
 
-Relevant API contracts ported into the mobile client include:
-- GET /auth/me
-- POST /auth/login
-- POST /auth/logout
-- GET /tours
-- GET /bookings/my-bookings
-- POST /bookings
+- users/{firebaseUid}: email, name, tenantId, role
+- tours/{tourId}: tenantId, title, description, location, price, durationDays, featured, imageUrl
+- bookings/{bookingId}: userId, tenantId, tourId, tourName, travelDate, numberOfGuests, unitPrice, totalAmount, status, bookingSource, paymentMethod, createdAt, updatedAt
 
-## Implemented mobile application
+## Firebase setup
 
-- Global Tours Material 3 shell.
-- Secure authentication/session storage.
-- Tenant-aware API requests.
-- Home/explore experience.
-- Tours listing.
-- Tour details.
-- Date and traveller selection.
-- Booking creation.
-- Customer booking history.
-- Profile and logout.
-- API URL override using --dart-define=API_URL.
+Firebase recommends FlutterFire configuration for registering Android, iOS and web applications:
+https://firebase.google.com/docs/flutter/setup
+
+After the Firebase project and apps are configured:
+
+1. Copy .env.example to .env.
+2. Enter the Firebase client configuration values.
+3. Enable Email/Password authentication.
+4. Create the Firestore database.
+5. Deploy firestore.rules.
+6. Create a users/{uid} document for each authenticated customer and set tenantId.
+7. Add tenant-scoped tour documents to tours.
+8. Run the Flutter application.
+
+The .env file is intentionally ignored by Git. Firebase client identifiers are not server secrets; Firestore Security Rules remain the authorization boundary.
 
 ## Run
 
-Default Android emulator API URL:
-http://10.0.2.2:5000/api
+    flutter pub get
+    flutter analyze
+    flutter test
+    flutter run
 
-Run against a deployed API:
-flutter run --dart-define=API_URL=https://YOUR-API-HOST/api
+## Firebase rules deployment
 
-Development:
-flutter pub get
-flutter analyze
-flutter test
-flutter run
+    firebase login
+    firebase use YOUR_FIREBASE_PROJECT_ID
+    firebase deploy --only firestore:rules
 
-This repository is a Flutter mobile client; it does not copy the React UI. It reuses the audited backend's API/domain contracts so the mobile application can operate alongside the existing web platform.
+This repository contains no MongoDB or Mongoose application code.
