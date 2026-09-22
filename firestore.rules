@@ -7,7 +7,9 @@ service cloud.firestore {
     }
 
     function userDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return get(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      ).data;
     }
 
     function sameTenant(tenantId) {
@@ -19,9 +21,7 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn() && request.auth.uid == userId;
-      allow create: if signedIn() && request.auth.uid == userId;
-      allow update: if signedIn() && request.auth.uid == userId;
-      allow delete: if false;
+      allow write: if false;
     }
 
     match /tours/{tourId} {
@@ -40,16 +40,12 @@ service cloud.firestore {
         && request.resource.data.tourId is string
         && request.resource.data.numberOfGuests is int
         && request.resource.data.numberOfGuests > 0
+        && request.resource.data.unitPrice is number
         && request.resource.data.totalAmount is number
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && request.resource.data.bookingSource == 'mobile_app';
 
-      allow update: if signedIn()
-        && resource.data.userId == request.auth.uid
-        && sameTenant(resource.data.tenantId)
-        && request.resource.data.userId == resource.data.userId
-        && request.resource.data.tenantId == resource.data.tenantId;
-
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     match /{document=**} {
