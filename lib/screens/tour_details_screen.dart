@@ -79,7 +79,7 @@ class _TourDetailsScreenState extends State<TourDetailsScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'KES ' + tour.price.toStringAsFixed(0) + ' per traveller',
+            'KES ${tour.price.toStringAsFixed(0)} per traveller',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
