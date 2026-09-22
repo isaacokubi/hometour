@@ -1,15 +1,20 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
+  static String _defaultBaseUrl() {
+    const configured = String.fromEnvironment('API_URL');
+    if (configured.isNotEmpty) {
+      return configured;
+    }
+    return kIsWeb ? 'http://localhost:5000/api' : 'http://10.0.2.2:5000/api';
+  }
+
   ApiClient({String? baseUrl, this.tenantSlug})
       : dio = Dio(
           BaseOptions(
-            baseUrl: baseUrl ??
-                const String.fromEnvironment(
-                  'API_URL',
-                  defaultValue: 'http://10.0.2.2:5000/api',
-                ),
+            baseUrl: baseUrl ?? _defaultBaseUrl(),
             connectTimeout: const Duration(seconds: 15),
             receiveTimeout: const Duration(seconds: 30),
             headers: {'Content-Type': 'application/json'},
