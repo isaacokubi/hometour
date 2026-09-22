@@ -31,7 +31,39 @@ class AppState extends ChangeNotifier {
       final u = Map<String, dynamic>.from(data['user'] is Map ? data['user'] : {});
       await api.saveSession(u, token: data['token']?.toString() ?? data['accessToken']?.toString());
       user = u; authenticated = true; await loadTours(); await loadBookings(); notifyListeners(); return true;
-    } catch (e) { error = e.toString(); notifyListeners(); return false; }
+    } on DioException catch (e) {
+      error = _friendlyDioError(e);
+      notifyListeners();
+      return false;
+    } catch (e) {
+      error = 'Login failed: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  String _friendlyDioError(DioException error) {
+    final response = error.response;
+    final data = response?.data;
+    if (data is Map && data['message'] != null) {
+      return data['message'].toString();
+    }
+
+    if (error.type == DioExceptionType.connectionError) {
+      return 'Cannot connect to the Global Tours server. Make sure the server is running on port 5000 and the API URL is correct.';
+    }
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout) {
+      return 'The Global Tours server took too long to respond. Check that the server is running.';
+    }
+
+    final status = response?.statusCode;
+    if (status != null) {
+      return 'Login failed (HTTP $status). Check your email, password, and tenant/company settings.';
+    }
+
+    return 'Login failed. Check that the Global Tours API is running and reachable.';
   }
 
   Future<void> logout() async { try { await api.post('/auth/logout'); } catch (_) {} await api.clearSession(); user=null; authenticated=false; notifyListeners(); }
