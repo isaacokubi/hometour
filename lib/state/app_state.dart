@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../core/api.dart';
 import '../models/tour.dart';
@@ -38,8 +39,14 @@ class AppState extends ChangeNotifier {
   Future<void> loadTours() async {
     try {
       final raw = await api.get('/tours', query: {'limit': 50});
-      final list = raw is List ? raw : (raw['data'] ?? raw['tours'] ?? []);
-      tours = (list as List).whereType<Map>().map((e) => Tour.fromJson(Map<String,dynamic>.from(e))).toList();
+      final dynamic list = raw is Map ? (raw['data'] ?? raw['tours'] ?? []) : raw;
+      if (list is List) {
+        tours = list
+            .whereType<Map>()
+            .map((e) => Tour.fromJson(Map<String, dynamic>.from(e)))
+            .where((tour) => tour.id.isNotEmpty)
+            .toList();
+      }
     } catch (e) { error = e.toString(); }
     notifyListeners();
   }
@@ -48,16 +55,31 @@ class AppState extends ChangeNotifier {
     if (!authenticated) return;
     try {
       final raw = await api.get('/bookings/my-bookings', query: {'limit': 100});
-      final list = raw is List ? raw : (raw['data'] ?? raw['bookings'] ?? []);
-      bookings = (list as List).whereType<Map>().map((e) => Booking.fromJson(Map<String,dynamic>.from(e))).toList();
+      final dynamic container = raw is Map ? (raw['data'] ?? raw) : raw;
+      final dynamic list = container is Map
+          ? (container['bookings'] ?? container['data'] ?? [])
+          : container;
+      if (list is List) {
+        bookings = list
+            .whereType<Map>()
+            .map((e) => Booking.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
     } catch (_) {}
     notifyListeners();
   }
 
   Future<bool> createBooking(String tourId, DateTime date, int travellers) async {
     try {
-      await api.post('/bookings', data: {'tour': tourId, 'travelDate': date.toIso8601String(), 'numberOfTravelers': travellers});
+      await api.post('/bookings', data: {'tour': tourId, 'travelDate': date.toIso8601String(), 'numberOfGuests': travellers,
+        'bookingSource': 'mobile_app',
+        'paymentMethod': 'MPESA'});
       await loadBookings(); return true;
-    } catch (e) { error=e.toString(); notifyListeners(); return false; }
+    } on DioException catch (e) {
+      final response = e.response?.data;
+      error = response is Map && response['message'] != null ? response['message'].toString() : 'Booking could not be created.';
+      notifyListeners();
+      return false;
+    } catch (_) { error='Booking could not be created.'; notifyListeners(); return false; }
   }
 }
