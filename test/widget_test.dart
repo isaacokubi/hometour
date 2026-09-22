@@ -5,7 +5,7 @@ import 'package:hometour/main.dart';
 
 void main() {
   testWidgets('Global Tours app renders its initial loading state', (tester) async {
-    await tester.pumpWidget(const HomeTourApp());
+    await tester.pumpWidget(const HomeTourApp(autoBootstrap: false));
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 }
