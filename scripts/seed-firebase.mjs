@@ -19,7 +19,34 @@ if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
   process.exit(1);
 }
 
-const serviceAccount = JSON.parse(fs.readFileSync(SERVICE_ACCOUNT_PATH, 'utf8'));
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(fs.readFileSync(SERVICE_ACCOUNT_PATH, 'utf8'));
+} catch (error) {
+  console.error('\nThe Firebase service-account file is not valid JSON.');
+  console.error(error.message);
+  process.exit(1);
+}
+
+const requiredServiceAccountFields = ['project_id', 'client_email', 'private_key'];
+const missingFields = requiredServiceAccountFields.filter(
+  (field) => typeof serviceAccount[field] !== 'string' || serviceAccount[field].trim() === '',
+);
+
+if (missingFields.length > 0) {
+  console.error('\nThe selected JSON is NOT a Firebase Admin SDK service-account key.');
+  console.error(`Missing required fields: ${missingFields.join(', ')}`);
+  console.error('Do not use google-services.json, firebase_options files, or web Firebase config files here.');
+  console.error('Download a new private key from Firebase Console > Project settings > Service accounts > Firebase Admin SDK.');
+  process.exit(1);
+}
+
+if (serviceAccount.project_id !== PROJECT_ID) {
+  console.error('\nThe Firebase service-account belongs to a different project.');
+  console.error(`Expected project: ${PROJECT_ID}`);
+  console.error(`Key project: ${serviceAccount.project_id}`);
+  process.exit(1);
+}
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -53,7 +80,7 @@ const tenantDefinitions = [
     country: 'Kenya',
     phone: '+254 700 100 102',
     email: 'info@savannacrown.example',
-    website: 'https://savanna-crown-safaris.example',
+    website: 'https://savannacrown.example',
     currency: 'KES',
     description: 'Safari, wildlife and cultural experiences across East Africa.',
   },
@@ -66,7 +93,7 @@ const tenantDefinitions = [
     country: 'Kenya',
     phone: '+254 700 100 103',
     email: 'info@coastalhorizon.example',
-    website: 'https://coastal-horizon-adventures.example',
+    website: 'https://coastalhorizon.example',
     currency: 'KES',
     description: 'Coastal holidays, island excursions and Kenyan adventure travel.',
   },
@@ -150,7 +177,7 @@ async function seed() {
   const credentials = [];
 
   console.log(`Seeding Firebase project: ${PROJECT_ID}`);
-  console.log(`Service account: ${serviceAccount.client_email || 'configured'}\n`);
+  console.log(`Service account: ${serviceAccount.client_email}\n`);
 
   for (const tenant of tenantDefinitions) {
     await db.collection('tenants').doc(tenant.id).set({
