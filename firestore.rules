@@ -1,55 +1,40 @@
 rules_version = '2';
-
 service cloud.firestore {
-  match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function userDoc() {
-      return get(
-        /databases/$(database)/documents/users/$(request.auth.uid)
-      ).data;
-    }
-
-    function sameTenant(tenantId) {
-      return signedIn()
-        && tenantId is string
-        && tenantId != ''
-        && userDoc().tenantId == tenantId;
-    }
-
-    match /users/{userId} {
-      allow read: if signedIn() && request.auth.uid == userId;
-      allow write: if false;
-    }
-
-    match /tours/{tourId} {
-      allow read: if signedIn() && sameTenant(resource.data.tenantId);
-      allow write: if false;
-    }
-
-    match /bookings/{bookingId} {
-      allow read: if signedIn()
-        && resource.data.userId == request.auth.uid
-        && sameTenant(resource.data.tenantId);
-
-      allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid
-        && sameTenant(request.resource.data.tenantId)
-        && request.resource.data.tourId is string
-        && request.resource.data.numberOfGuests is int
-        && request.resource.data.numberOfGuests > 0
-        && request.resource.data.unitPrice is number
-        && request.resource.data.totalAmount is number
-        && request.resource.data.status == 'pending'
-        && request.resource.data.bookingSource == 'mobile_app';
-
-      allow update, delete: if false;
-    }
-
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
+ match /databases/{database}/documents {
+  function signedIn(){return request.auth!=null;}
+  function me(){return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;}
+  function tenant(t){return signedIn() && t is string && t!='' && me().tenantId==t;}
+  function staff(){return signedIn() && me().role in ['agent','guide','driver','manager','tour_manager','admin'];}
+  function admin(){return signedIn() && me().role in ['admin','superadmin','super_admin','platform_owner'];}
+  function staffWrite(t){return tenant(t) && staff();}
+  match /users/{uid}{allow read:if signedIn()&&(request.auth.uid==uid||admin());allow write:if false;}
+  match /tenants/{id}{allow read:if admin()||(signedIn()&&me().tenantId==id);allow write:if admin();}
+  match /tours/{id}{allow read:if tenant(resource.data.tenantId);allow create,update,delete:if admin()||(staff()&&tenant(request.resource.data.tenantId));}
+  match /destinations/{id}{allow read:if tenant(resource.data.tenantId);allow create,update,delete:if admin()||staffWrite(request.resource.data.tenantId);}
+  match /tourpackages/{id}{allow read:if tenant(resource.data.tenantId);allow create,update,delete:if staffWrite(request.resource.data.tenantId);}
+  match /suppliers/{id}{allow read:if tenant(resource.data.tenantId);allow create,update,delete:if admin()||staffWrite(request.resource.data.tenantId);}
+  match /hotels/{id}{allow read:if tenant(resource.data.tenantId);allow create,update,delete:if admin()||staffWrite(request.resource.data.tenantId);}
+  match /accommodations/{id}{allow read:if tenant(resource.data.tenantId);allow create,update,delete:if admin()||staffWrite(request.resource.data.tenantId);}
+  match /roomtypes/{id}{allow read:if tenant(resource.data.tenantId);allow write:if admin()||staffWrite(request.resource.data.tenantId);}
+  match /rateplans/{id}{allow read:if tenant(resource.data.tenantId);allow write:if admin()||staffWrite(request.resource.data.tenantId);}
+  match /accommodationinventory/{id}{allow read:if tenant(resource.data.tenantId);allow write:if admin()||staffWrite(request.resource.data.tenantId);}
+  match /bookings/{id}{allow read:if tenant(resource.data.tenantId)&&(resource.data.userId==request.auth.uid||staff()||admin());allow create:if signedIn()&&request.resource.data.userId==request.auth.uid&&tenant(request.resource.data.tenantId)&&request.resource.data.numberOfGuests is int&&request.resource.data.numberOfGuests>0&&request.resource.data.totalAmount is number&&request.resource.data.status=='pending'&&request.resource.data.bookingSource=='mobile_app';allow update:if staff()&&tenant(resource.data.tenantId)&&tenant(request.resource.data.tenantId);allow delete:if admin()&&tenant(resource.data.tenantId);}
+  match /payments/{id}{allow read:if tenant(resource.data.tenantId)&&(admin()||resource.data.userId==request.auth.uid);allow write:if admin()&&tenant(request.resource.data.tenantId);}
+  match /invoices/{id}{allow read:if tenant(resource.data.tenantId)&&(admin()||resource.data.userId==request.auth.uid);allow write:if admin()&&tenant(request.resource.data.tenantId);}
+  match /airportTransfers/{id}{allow read:if tenant(resource.data.tenantId);allow write:if staffWrite(request.resource.data.tenantId);}
+  match /hotelreservations/{id}{allow read:if tenant(resource.data.tenantId)&&(staff()||resource.data.userId==request.auth.uid);allow write:if staffWrite(request.resource.data.tenantId);}
+  match /transferreservations/{id}{allow read:if tenant(resource.data.tenantId)&&(staff()||resource.data.userId==request.auth.uid);allow write:if staffWrite(request.resource.data.tenantId);}
+  match /customTourRequests/{id}{allow read:if tenant(resource.data.tenantId)&&(staff()||resource.data.userId==request.auth.uid);allow create:if signedIn()&&tenant(request.resource.data.tenantId)&&request.resource.data.userId==request.auth.uid;allow update:if staffWrite(resource.data.tenantId);}
+  match /quotes/{id}{allow read:if tenant(resource.data.tenantId)&&(staff()||resource.data.userId==request.auth.uid);allow write:if staffWrite(request.resource.data.tenantId);}
+  match /reviews/{id}{allow read:if tenant(resource.data.tenantId);allow create:if signedIn()&&tenant(request.resource.data.tenantId)&&request.resource.data.userId==request.auth.uid;allow update,delete:if admin();}
+  match /notifications/{id}{allow read:if signedIn()&&resource.data.userId==request.auth.uid;allow write:if admin();}
+  match /wishlist/{id}{allow read:if signedIn()&&resource.data.userId==request.auth.uid;allow create:if signedIn()&&request.resource.data.userId==request.auth.uid;allow update,delete:if signedIn()&&resource.data.userId==request.auth.uid;}
+  match /vehicles/{id}{allow read:if tenant(resource.data.tenantId);allow write:if admin()||staffWrite(request.resource.data.tenantId);}
+  match /staff/{id}{allow read:if admin()||(staff()&&tenant(resource.data.tenantId));allow write:if admin()&&tenant(request.resource.data.tenantId);}
+  match /commissions/{id}{allow read:if admin()||(signedIn()&&tenant(resource.data.tenantId)&&resource.data.userId==request.auth.uid);allow write:if admin()&&tenant(request.resource.data.tenantId);}
+  match /auditLogs/{id}{allow read:if admin()&&tenant(resource.data.tenantId);allow write:if false;}
+  match /systemSettings/{id}{allow read:if admin()&&tenant(resource.data.tenantId);allow write:if admin()&&tenant(request.resource.data.tenantId);}
+  match /paymentGateways/{id}{allow read:if admin()&&tenant(resource.data.tenantId);allow write:if false;}
+  match /{document=**}{allow read,write:if false;}
+ }
 }

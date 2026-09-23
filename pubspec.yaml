@@ -1,5 +1,5 @@
 name: hometour
-description: Global Tours Flutter mobile application powered by Firebase Authentication and Cloud Firestore.
+description: Global Tours Flutter application powered by Firebase Authentication and Cloud Firestore.
 publish_to: "none"
 version: 1.0.0+1
 environment:

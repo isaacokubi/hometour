@@ -1,0 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/domain.dart';
+class GlobalToursService{GlobalToursService({FirebaseFirestore? firestore}):db=firestore??FirebaseFirestore.instance;final FirebaseFirestore db;CollectionReference<Map<String,dynamic>> c(String n)=>db.collection(n);
+Future<List<CatalogRecord>> list(String collection,String tenantId,{int limit=100})async{final q=tenantId.isEmpty?c(collection):c(collection).where('tenantId',isEqualTo:tenantId);final s=await q.limit(limit).get();return s.docs.map((d)=>CatalogRecord(id:d.id,collection:collection,data:d.data())).toList();}
+Future<List<Map<String,dynamic>>> rawList(String collection,String tenantId,{int limit=200})async{final q=tenantId.isEmpty?c(collection):c(collection).where('tenantId',isEqualTo:tenantId);final s=await q.limit(limit).get();return s.docs.map((d)=>{...d.data(),'id':d.id}).toList();}
+Future<String> create(String collection,String tenantId,Map<String,dynamic> data)async{if(tenantId.isEmpty)throw StateError('Tenant is required.');final r=await c(collection).add({...data,'tenantId':tenantId,'createdAt':FieldValue.serverTimestamp(),'updatedAt':FieldValue.serverTimestamp()});return r.id;}
+Future<void> update(String collection,String id,String tenantId,Map<String,dynamic> data)=>c(collection).doc(id).update({...data,'tenantId':tenantId,'updatedAt':FieldValue.serverTimestamp()});
+Future<DashboardStats> stats(String tenantId)async{final r=await Future.wait([rawList('tours',tenantId),rawList('bookings',tenantId),rawList('users',tenantId),rawList('suppliers',tenantId),rawList('hotels',tenantId),rawList('destinations',tenantId)]);final b=r[1];return DashboardStats(tours:r[0].length,bookings:b.length,customers:r[2].where((x)=>'${x['role']}'.toLowerCase()=='customer').length,revenue:b.fold<double>(0,(s,x)=>s+numberValue(x['totalAmount'])),pending:b.where((x)=>'${x['status']}'.toLowerCase()=='pending').length,suppliers:r[3].length,hotels:r[4].length,destinations:r[5].length);}
+Future<void> setBookingStatus(String id,String tenantId,String status)=>update('bookings',id,tenantId,{'status':status});
+}
