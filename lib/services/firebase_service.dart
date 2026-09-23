@@ -71,17 +71,23 @@ class FirebaseService {
       throw StateError('A tenant is required to load tours.');
     }
 
-    final snapshot = await firestore
-        .collection('tours')
-        .where('tenantId', isEqualTo: tenantId)
-        .limit(50)
-        .get();
+    try {
+      final snapshot = await firestore
+          .collection('tours')
+          .where('tenantId', isEqualTo: tenantId)
+          .limit(50)
+          .get();
 
-    return snapshot.docs.map((doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return data;
-    }).toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } on FirebaseException catch (e) {
+      throw StateError(
+        'Unable to load tours (${e.code}): ${e.message ?? 'Firestore request failed.'}',
+      );
+    }
   }
 
   Future<List<Map<String, dynamic>>> getBookings(
@@ -90,25 +96,31 @@ class FirebaseService {
   ) async {
     if (uid.isEmpty || tenantId.isEmpty) return [];
 
-    final snapshot = await firestore
-        .collection('bookings')
-        .where('userId', isEqualTo: uid)
-        .where('tenantId', isEqualTo: tenantId)
-        .limit(100)
-        .get();
+    try {
+      final snapshot = await firestore
+          .collection('bookings')
+          .where('userId', isEqualTo: uid)
+          .where('tenantId', isEqualTo: tenantId)
+          .limit(100)
+          .get();
 
-    final results = snapshot.docs.map((doc) {
-      final data = doc.data();
-      data['id'] = doc.id;
-      return data;
-    }).toList();
+      final results = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
 
-    results.sort((a, b) {
-      final aDate = _timestampValue(a['createdAt']);
-      final bDate = _timestampValue(b['createdAt']);
-      return bDate.compareTo(aDate);
-    });
-    return results;
+      results.sort((a, b) {
+        final aDate = _timestampValue(a['createdAt']);
+        final bDate = _timestampValue(b['createdAt']);
+        return bDate.compareTo(aDate);
+      });
+      return results;
+    } on FirebaseException catch (e) {
+      throw StateError(
+        'Unable to load bookings (${e.code}): ${e.message ?? 'Firestore request failed.'}',
+      );
+    }
   }
 
   Future<void> createBooking({
@@ -121,7 +133,7 @@ class FirebaseService {
     required String tourName,
   }) async {
     if (uid.isEmpty || tenantId.isEmpty || tourId.isEmpty) {
-      throw StateError('User, tenant and tour are required to create a booking.');
+      throw StateError('User, tenant and tour are required to create the booking.');
     }
     if (travellers < 1) {
       throw ArgumentError.value(
@@ -138,21 +150,27 @@ class FirebaseService {
       );
     }
 
-    await firestore.collection('bookings').add({
-      'userId': uid,
-      'tenantId': tenantId,
-      'tourId': tourId,
-      'tourName': tourName,
-      'travelDate': Timestamp.fromDate(travelDate),
-      'numberOfGuests': travellers,
-      'unitPrice': unitPrice,
-      'totalAmount': unitPrice * travellers,
-      'status': 'pending',
-      'bookingSource': 'mobile_app',
-      'paymentMethod': 'MPESA',
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await firestore.collection('bookings').add({
+        'userId': uid,
+        'tenantId': tenantId,
+        'tourId': tourId,
+        'tourName': tourName,
+        'travelDate': Timestamp.fromDate(travelDate),
+        'numberOfGuests': travellers,
+        'unitPrice': unitPrice,
+        'totalAmount': unitPrice * travellers,
+        'status': 'pending',
+        'bookingSource': 'mobile_app',
+        'paymentMethod': 'MPESA',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      throw StateError(
+        'Booking write failed (${e.code}): ${e.message ?? 'Firestore request failed.'}',
+      );
+    }
   }
 
   double _timestampValue(dynamic value) {
