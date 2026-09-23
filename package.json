@@ -1,0 +1,12 @@
+{
+  "name": "hometour-firebase-seeder",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local Firebase Admin seed utilities for the HomeTour / Global Tours demo environment.",
+  "scripts": {
+    "seed:firebase": "node scripts/seed-firebase.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.5.0"
+  }
+}
