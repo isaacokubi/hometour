@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +18,18 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load(fileName: '.env');
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Chrome/Flutter Web can fail to establish Firestore's streaming
+    // connection on networks/proxies that interfere with HTTP/3/QUIC.
+    // Force Firestore WebChannel to use long-polling on web only.
+    if (kIsWeb) {
+      FirebaseFirestore.instance.settings = const Settings(
+        webExperimentalForceLongPolling: true,
+      );
+    }
   } catch (error) {
     runApp(FirebaseConfigurationErrorApp(error: error));
     return;
@@ -57,7 +70,9 @@ class FirebaseConfigurationErrorApp extends StatelessWidget {
                     Text(
                       error.toString(),
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
                 ),
@@ -69,13 +84,19 @@ class FirebaseConfigurationErrorApp extends StatelessWidget {
 }
 
 class HomeTourApp extends StatelessWidget {
-  const HomeTourApp({super.key, this.autoBootstrap = true, this.firebaseService});
+  const HomeTourApp({
+    super.key,
+    this.autoBootstrap = true,
+    this.firebaseService,
+  });
+
   final bool autoBootstrap;
   final app_firebase.FirebaseService? firebaseService;
 
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider(
-        create: (_) => AppState(firebaseService ?? app_firebase.FirebaseService()),
+        create: (_) =>
+            AppState(firebaseService ?? app_firebase.FirebaseService()),
         child: MaterialApp(
           title: 'Global Tours',
           debugShowCheckedModeBanner: false,
