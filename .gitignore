@@ -12,4 +12,10 @@ android/.gradle/
 android/local.properties
 ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
+
+# Local Firebase/client secrets
 .env
+.secrets/
+service-account*.json
+google-services.json
+GoogleService-Info.plist
