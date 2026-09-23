@@ -130,7 +130,11 @@ function password() {
 }
 
 function slug(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 function safeEmailPart(value) {
@@ -138,7 +142,7 @@ function safeEmailPart(value) {
 }
 
 function stableId(prefix, ...parts) {
-  return `${prefix}-${parts.map(slug).join('-')}`;
+  return `${prefix}-${parts.map((part) => slug(part)).join('-')}`;
 }
 
 async function upsertAuthUser({ email, displayName, password: pwd }) {
